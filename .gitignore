@@ -1,7 +1,15 @@
 node_modules/
 dist/
+.vite/
+.env
+.env.*
+*.log
+*.tmp
 .DS_Store
 Thumbs.db
+desktop.ini
+.vscode/
+.idea/
 Mythili_Vijay_Uttarakhand_*.html
 Uttarakhand_Anniversary_Trip_Master_Plan.md
 docs/
@@ -11,3 +19,4 @@ package-lock.json
 postcss.config.js
 tailwind.config.js
 vite.config.js
+

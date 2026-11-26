@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+Mythili_Vijay_Uttarakhand_*.html
+Uttarakhand_Anniversary_Trip_Master_Plan.md
+docs/
+src/
+package.json
+package-lock.json
+postcss.config.js
+tailwind.config.js
+vite.config.js

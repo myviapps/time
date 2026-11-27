@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=Caveat:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
     @font-face {
@@ -2063,14 +2064,20 @@
       
       <div class="flex items-end justify-between flex-wrap gap-4" style="margin-bottom:2rem;" data-reveal="up">
         <div>
-          <span class="eyebrow" style="margin-bottom:0.75rem;">💝 Shared Love Wallet · Auto-Saved Offline</span>
+          <div class="flex items-center flex-wrap gap-2" style="margin-bottom:0.75rem;">
+            <span class="eyebrow" style="margin-bottom:0;">💝 Shared Love Wallet</span>
+            <button id="cloudSyncBadge" onclick="openCloudSyncModal()" class="btn btn-glass" style="padding:0.32rem 0.78rem;font-size:0.68rem;font-family:var(--f-mono);border-color:rgba(234,182,118,0.32);color:var(--gold-soft);" title="Configure or inspect Supabase real-time cloud sync">
+              ☁️ Connect Supabase Sync
+            </button>
+          </div>
           <h2 class="section-title">Bills &amp; Expense <em>Ledger</em></h2>
           <p style="color:var(--ink-muted);font-size:0.9rem;margin-top:0.35rem;">
-            Unified ₹99,231.39 trip wallet for Mythili &amp; Vijay. Log receipts on the road, edit or delete entries, flip Paid status, and track effortlessly.
+            Unified trip wallet for Mythili &amp; Vijay. Log receipts on the road, edit or delete entries permanently, and sync live across devices via Supabase.
           </p>
         </div>
         <div class="flex flex-wrap gap-2">
           <button onclick="openAddExpenseModal()" class="btn btn-rose-gold">+ Add Bill / Receipt</button>
+          <button onclick="clearAllExpenses()" class="btn btn-glass" title="Delete all expenses permanently">🧹 Clear All</button>
           <button onclick="resetLedgerToDefault()" class="btn btn-glass" title="Restore original 18 items">↺ Reset</button>
           <button onclick="window.print()" class="btn btn-glass">🖨️ Print Sheet</button>
         </div>
@@ -2289,6 +2296,52 @@
       <div class="flex gap-2" style="margin-top:0.5rem;">
         <button onclick="closeAddExpenseModal()" class="btn btn-glass" style="flex:1;">Cancel</button>
         <button id="expenseModalSaveBtn" onclick="saveNewExpense()" class="btn btn-rose-gold" style="flex:1;">Save Expense</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SUPABASE REAL-TIME CLOUD SYNC -->
+  <div id="supabaseSyncModal" class="modal-overlay hidden" onclick="if(event.target===this)closeCloudSyncModal();">
+    <div class="glass-panel" style="max-width:520px;width:100%;padding:1.75rem;display:flex;flex-direction:column;gap:0.95rem;max-height:90vh;overflow-y:auto;">
+      <div class="flex items-center justify-between" style="border-bottom:1px solid var(--border-hairline);padding-bottom:0.75rem;">
+        <div>
+          <h3 class="f-display" style="font-size:1.35rem;">☁️ Supabase Real-Time Sync</h3>
+          <p id="cloudSyncModalStatus" class="f-mono" style="font-size:0.68rem;color:var(--gold-soft);margin-top:0.15rem;">Not connected — changes currently save locally per browser.</p>
+        </div>
+        <button onclick="closeCloudSyncModal()" style="background:none;border:none;color:var(--ink-muted);cursor:pointer;font-size:1.1rem;">✕</button>
+      </div>
+
+      <p style="font-size:0.78rem;color:var(--ink-muted);line-height:1.55;">
+        Connect your free Supabase project so deleted, edited, or new expenses (and packing checks) sync live across both Vijay’s &amp; Mythili’s phones. Only use your public <strong>Project URL</strong> &amp; <strong>anon / publishable</strong> key (never paste your <code>service_role</code> key).
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:0.75rem;font-size:0.8rem;">
+        <div>
+          <label class="f-mono" style="display:block;margin-bottom:0.28rem;font-size:0.68rem;color:var(--ink-muted);">Supabase Project URL</label>
+          <input type="url" id="sbUrlInput" value="https://gitfidxwwvlfusexawjy.supabase.co" placeholder="https://your-project-ref.supabase.co" style="width:100%;background:#110c15;border:1px solid var(--border-hairline);border-radius:0.75rem;padding:0.6rem 0.85rem;color:#fff;outline:none;font-family:var(--f-mono);font-size:0.75rem;" />
+        </div>
+        <div>
+          <label class="f-mono" style="display:block;margin-bottom:0.28rem;font-size:0.68rem;color:var(--ink-muted);">Supabase Anon / Publishable Key</label>
+          <input type="text" id="sbKeyInput" placeholder="eyJhbGciOi... or sb_publishable_..." style="width:100%;background:#110c15;border:1px solid var(--border-hairline);border-radius:0.75rem;padding:0.6rem 0.85rem;color:#fff;outline:none;font-family:var(--f-mono);font-size:0.75rem;" />
+        </div>
+        <div>
+          <label class="f-mono" style="display:block;margin-bottom:0.28rem;font-size:0.68rem;color:var(--ink-muted);">Shared Trip Room ID (min 6 chars)</label>
+          <input type="text" id="sbTripIdInput" value="mythili-vijay-uttarakhand-2026" style="width:100%;background:#110c15;border:1px solid var(--border-hairline);border-radius:0.75rem;padding:0.6rem 0.85rem;color:#fff;outline:none;font-family:var(--f-mono);font-size:0.75rem;" />
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button onclick="saveCloudSyncConfig()" class="btn btn-rose-gold" style="flex:1;min-width:150px;">Save &amp; Connect Live</button>
+        <button onclick="copyCloudShareLink()" class="btn btn-glass" title="Copy URL with Supabase config to pair another device">🔗 Copy Pair Link</button>
+        <button onclick="disconnectCloudSync()" class="btn btn-glass" style="color:var(--rose-soft);border-color:rgba(244,91,122,0.28);">Disconnect</button>
+      </div>
+
+      <div style="border-top:1px solid var(--border-hairline);padding-top:0.8rem;">
+        <div class="flex items-center justify-between gap-2" style="margin-bottom:0.45rem;">
+          <span class="f-mono" style="font-size:0.68rem;color:var(--gold);">1-TIME SUPABASE SQL SETUP (SQL EDITOR)</span>
+          <button onclick="copySupabaseSchemaSql(this)" class="btn btn-glass" style="padding:0.25rem 0.65rem;font-size:0.66rem;">📋 Copy SQL</button>
+        </div>
+        <pre id="supabaseSqlPreview" class="f-mono" style="background:#0d0910;border:1px solid var(--border-hairline);border-radius:0.75rem;padding:0.65rem;font-size:0.64rem;color:var(--ink-muted);max-height:140px;overflow:auto;white-space:pre-wrap;line-height:1.45;"></pre>
       </div>
     </div>
   </div>
@@ -3395,9 +3448,81 @@
     let undoDeleteTimer = null;
     let packedStatus = {};
 
+    // Supabase Cloud Config (populate url & anonKey directly here for automatic zero-setup sync across devices,
+    // or connect dynamically from the in-app Cloud Sync modal)
+    const DEFAULT_SUPABASE_CONFIG = {
+      url: "https://gitfidxwwvlfusexawjy.supabase.co",
+      anonKey: "",
+      tripId: "mythili-vijay-uttarakhand-2026"
+    };
+    const SUPABASE_SCHEMA_SQL = `-- Run once in Supabase Dashboard -> SQL Editor -> New Query
+create table if not exists public.trip_expenses (
+  id bigint not null,
+  trip_id text not null default 'mythili-vijay-uttarakhand-2026',
+  name text not null,
+  category text not null,
+  amount numeric(12, 2) not null,
+  paid boolean not null default false,
+  notes text not null default '',
+  updated_at timestamptz not null default now(),
+  primary key (trip_id, id)
+);
+
+create table if not exists public.trip_sync_meta (
+  trip_id text primary key,
+  expenses_seeded boolean not null default true,
+  packed_items jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.trip_expenses replica identity full;
+alter table public.trip_sync_meta replica identity full;
+alter table public.trip_expenses enable row level security;
+alter table public.trip_sync_meta enable row level security;
+
+drop policy if exists "trip_expenses_room_rw" on public.trip_expenses;
+create policy "trip_expenses_room_rw" on public.trip_expenses
+  for all to anon, authenticated
+  using (char_length(trip_id) >= 6) with check (char_length(trip_id) >= 6);
+
+drop policy if exists "trip_sync_meta_room_rw" on public.trip_sync_meta;
+create policy "trip_sync_meta_room_rw" on public.trip_sync_meta
+  for all to anon, authenticated
+  using (char_length(trip_id) >= 6) with check (char_length(trip_id) >= 6);
+
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='trip_expenses') then
+    alter publication supabase_realtime add table public.trip_expenses;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='trip_sync_meta') then
+    alter publication supabase_realtime add table public.trip_sync_meta;
+  end if;
+end $$;`;
+
+    let sbClient = null;
+    let sbChannel = null;
+    let syncOutbox = [];
+
     try {
+      const qs = new URLSearchParams(window.location.search);
+      const qUrl = qs.get("sb_url");
+      const qKey = qs.get("sb_key");
+      const qTrip = qs.get("trip");
+      if (qUrl && qKey) {
+        localStorage.setItem("mv_supabase_config_v1", JSON.stringify({
+          url: qUrl.trim().replace(/\/+$/, ""),
+          anonKey: qKey.trim(),
+          tripId: (qTrip || DEFAULT_SUPABASE_CONFIG.tripId).trim()
+        }));
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+
+      const sOut = localStorage.getItem("mv_supabase_outbox_v1");
+      syncOutbox = sOut ? JSON.parse(sOut) : [];
       const sExp = localStorage.getItem("mv_uttarakhand_expenses_v2");
-      if (sExp) {
+      if (sExp !== null) {
         const parsed = JSON.parse(sExp);
         // Clean out legacy item #15 label if stored
         expenses = parsed.map(x => x.id === 15 && /anniversary/i.test(x.name) ? { ...x, name: "Mussoorie Ridge Dinner", notes: "4 Dec Evening · Mussoorie mountain dining" } : x);
@@ -3409,6 +3534,7 @@
     } catch(e) {
       expenses = DEFAULT_EXPENSES.map(x => ({ ...x }));
       packedStatus = {};
+      syncOutbox = [];
     }
 
     // 3. COUNTDOWN TICKER
@@ -4125,9 +4251,323 @@
       try { localStorage.setItem("mv_uttarakhand_expenses_v2", JSON.stringify(expenses)); } catch(e) {}
     }
 
+    function getSupabaseConfig() {
+      if (DEFAULT_SUPABASE_CONFIG.url && DEFAULT_SUPABASE_CONFIG.anonKey) {
+        return { ...DEFAULT_SUPABASE_CONFIG };
+      }
+      try {
+        const saved = localStorage.getItem("mv_supabase_config_v1");
+        if (saved) {
+          const cfg = JSON.parse(saved);
+          if (cfg && cfg.url && cfg.anonKey) {
+            return {
+              url: String(cfg.url).trim().replace(/\/+$/, ""),
+              anonKey: String(cfg.anonKey).trim(),
+              tripId: String(cfg.tripId || DEFAULT_SUPABASE_CONFIG.tripId).trim()
+            };
+          }
+        }
+      } catch(e) {}
+      return null;
+    }
+
+    function setCloudStatus(state, message) {
+      const badge = document.getElementById("cloudSyncBadge");
+      const modalStatus = document.getElementById("cloudSyncModalStatus");
+      const styles = {
+        unconfigured: { text: "☁️ Connect Supabase Sync", border: "rgba(234,182,118,0.32)", color: "var(--gold-soft)" },
+        connecting:   { text: "🔄 Syncing Cloud...",      border: "rgba(234,182,118,0.45)", color: "var(--gold)" },
+        live:         { text: "🟢 Cloud Live Sync",       border: "rgba(52,211,153,0.45)",  color: "var(--emerald)" },
+        offline:      { text: `🟠 Offline · Queued (${syncOutbox.length})`, border: "rgba(244,91,122,0.45)", color: "var(--rose-soft)" },
+        error:        { text: "⚠️ Cloud Sync Error",      border: "rgba(244,91,122,0.5)",   color: "var(--rose-soft)" }
+      };
+      const st = styles[state] || styles.unconfigured;
+      if (badge) {
+        badge.innerText = st.text;
+        badge.style.borderColor = st.border;
+        badge.style.color = st.color;
+      }
+      if (modalStatus) {
+        modalStatus.innerText = message || st.text;
+        modalStatus.style.color = st.color;
+      }
+    }
+
+    function saveOutbox() {
+      try { localStorage.setItem("mv_supabase_outbox_v1", JSON.stringify(syncOutbox)); } catch(e) {}
+    }
+
+    function ensureSupabaseSdk() {
+      if (window.supabase && typeof window.supabase.createClient === "function") {
+        return Promise.resolve(window.supabase);
+      }
+      return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
+        script.onload = () => (window.supabase ? resolve(window.supabase) : reject(new Error("Supabase SDK failed to load")));
+        script.onerror = () => reject(new Error("Could not load Supabase SDK while offline"));
+        document.head.appendChild(script);
+      });
+    }
+
+    function toRemoteExpenseRow(item, tripId) {
+      return {
+        id: Number(item.id),
+        trip_id: tripId,
+        name: String(item.name),
+        category: String(item.category),
+        amount: Number(item.amount),
+        paid: Boolean(item.paid),
+        notes: String(item.notes || ""),
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    async function executeCloudOp(op) {
+      const cfg = getSupabaseConfig();
+      if (!sbClient || !cfg) throw new Error("Not connected");
+      const tripId = cfg.tripId;
+      if (op.type === "upsertExpense") {
+        const { error } = await sbClient.from("trip_expenses").upsert(toRemoteExpenseRow(op.item, tripId), { onConflict: "trip_id,id" });
+        if (error) throw error;
+      } else if (op.type === "deleteExpense") {
+        const { error } = await sbClient.from("trip_expenses").delete().eq("trip_id", tripId).eq("id", Number(op.id));
+        if (error) throw error;
+      } else if (op.type === "replaceExpenses") {
+        const { error: delErr } = await sbClient.from("trip_expenses").delete().eq("trip_id", tripId);
+        if (delErr) throw delErr;
+        if (op.items.length > 0) {
+          const rows = op.items.map(it => toRemoteExpenseRow(it, tripId));
+          const { error: insErr } = await sbClient.from("trip_expenses").upsert(rows, { onConflict: "trip_id,id" });
+          if (insErr) throw insErr;
+        }
+        const { error: metaErr } = await sbClient.from("trip_sync_meta").upsert({
+          trip_id: tripId,
+          expenses_seeded: true,
+          packed_items: packedStatus,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "trip_id" });
+        if (metaErr) throw metaErr;
+      } else if (op.type === "syncPacking") {
+        const { error } = await sbClient.from("trip_sync_meta").upsert({
+          trip_id: tripId,
+          expenses_seeded: true,
+          packed_items: op.packed,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "trip_id" });
+        if (error) throw error;
+      }
+    }
+
+    async function runOrQueueCloudOp(op) {
+      const cfg = getSupabaseConfig();
+      if (!cfg) return;
+      if (!sbClient || !navigator.onLine) {
+        syncOutbox.push(op);
+        saveOutbox();
+        setCloudStatus("offline", `Queued ${syncOutbox.length} offline change(s) — will auto-sync when online.`);
+        return;
+      }
+      setCloudStatus("connecting", "Syncing changes to Supabase...");
+      try {
+        await executeCloudOp(op);
+        setCloudStatus("live", `Connected to ${cfg.tripId} · Synced just now`);
+      } catch(err) {
+        syncOutbox.push(op);
+        saveOutbox();
+        const offlineNow = !navigator.onLine;
+        setCloudStatus(offlineNow ? "offline" : "error", err?.message || "Queued for retry");
+      }
+    }
+
+    async function flushSyncOutbox() {
+      if (!sbClient || syncOutbox.length === 0 || !navigator.onLine) return true;
+      setCloudStatus("connecting", `Flushing ${syncOutbox.length} queued change(s)...`);
+      while (syncOutbox.length > 0) {
+        const nextOp = syncOutbox[0];
+        try {
+          await executeCloudOp(nextOp);
+          syncOutbox.shift();
+          saveOutbox();
+        } catch(err) {
+          setCloudStatus("error", `Sync paused: ${err?.message || "Retry pending"}`);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    async function pullSupabaseSnapshot() {
+      const cfg = getSupabaseConfig();
+      if (!sbClient || !cfg) return;
+      const tripId = cfg.tripId;
+      const [{ data: meta, error: metaErr }, { data: rows, error: expErr }] = await Promise.all([
+        sbClient.from("trip_sync_meta").select("*").eq("trip_id", tripId).maybeSingle(),
+        sbClient.from("trip_expenses").select("*").eq("trip_id", tripId).order("id", { ascending: true })
+      ]);
+      if (metaErr) throw metaErr;
+      if (expErr) throw expErr;
+
+      // First-ever database initialization: push current state once and mark seeded=true so later deletes never re-seed.
+      if (!meta && (!rows || rows.length === 0)) {
+        await executeCloudOp({ type: "replaceExpenses", items: expenses });
+        return;
+      }
+
+      if (rows) {
+        expenses = rows.map(r => ({
+          id: Number(r.id),
+          name: r.name,
+          category: r.category,
+          amount: Number(r.amount),
+          paid: Boolean(r.paid),
+          notes: r.notes || ""
+        }));
+        renderExpenses();
+      }
+      if (meta && meta.packed_items && typeof meta.packed_items === "object") {
+        packedStatus = meta.packed_items;
+        renderPacking();
+      }
+    }
+
+    function subscribeSupabaseRealtime() {
+      const cfg = getSupabaseConfig();
+      if (!sbClient || !cfg) return;
+      if (sbChannel) {
+        try { sbClient.removeChannel(sbChannel); } catch(e) {}
+        sbChannel = null;
+      }
+      const tripId = cfg.tripId;
+      sbChannel = sbClient
+        .channel(`trip-realtime-${tripId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "trip_expenses" }, (payload) => {
+          const row = payload.new && Object.keys(payload.new).length ? payload.new : payload.old;
+          if (!row || (row.trip_id && row.trip_id !== tripId)) return;
+          if (payload.eventType === "DELETE") {
+            const delId = Number(payload.old.id);
+            expenses = expenses.filter(x => Number(x.id) !== delId);
+            renderExpenses();
+          } else {
+            const mapped = {
+              id: Number(payload.new.id),
+              name: payload.new.name,
+              category: payload.new.category,
+              amount: Number(payload.new.amount),
+              paid: Boolean(payload.new.paid),
+              notes: payload.new.notes || ""
+            };
+            const idx = expenses.findIndex(x => Number(x.id) === mapped.id);
+            if (idx >= 0) expenses[idx] = mapped;
+            else expenses.push(mapped);
+            expenses.sort((a, b) => Number(a.id) - Number(b.id));
+            renderExpenses();
+          }
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "trip_sync_meta" }, (payload) => {
+          const row = payload.new;
+          if (!row || row.trip_id !== tripId) return;
+          if (row.packed_items && typeof row.packed_items === "object") {
+            packedStatus = row.packed_items;
+            renderPacking();
+          }
+        })
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            setCloudStatus("live", `Real-time sync active · Room: ${tripId}`);
+          }
+        });
+    }
+
+    async function initSupabaseSync() {
+      const cfg = getSupabaseConfig();
+      const pre = document.getElementById("supabaseSqlPreview");
+      if (pre && !pre.textContent) pre.textContent = SUPABASE_SCHEMA_SQL;
+      if (!cfg) {
+        sbClient = null;
+        setCloudStatus("unconfigured", "Not connected — click Save & Connect Live after running the SQL setup.");
+        return;
+      }
+      if (!navigator.onLine) {
+        setCloudStatus("offline", "Device offline — showing cached cloud ledger & queueing edits.");
+        return;
+      }
+      setCloudStatus("connecting", "Connecting to Supabase Realtime...");
+      try {
+        const sdk = await ensureSupabaseSdk();
+        sbClient = sdk.createClient(cfg.url, cfg.anonKey, { auth: { persistSession: false } });
+        const flushed = await flushSyncOutbox();
+        if (flushed) await pullSupabaseSnapshot();
+        subscribeSupabaseRealtime();
+        setCloudStatus("live", `Real-time sync active · Room: ${cfg.tripId}`);
+      } catch(err) {
+        setCloudStatus("error", `Check URL, key, or run SQL setup (${err?.message || "Connection failed"})`);
+      }
+    }
+
+    function openCloudSyncModal() {
+      const pre = document.getElementById("supabaseSqlPreview");
+      if (pre) pre.textContent = SUPABASE_SCHEMA_SQL;
+      const cfg = getSupabaseConfig();
+      if (cfg) {
+        document.getElementById("sbUrlInput").value = cfg.url;
+        document.getElementById("sbKeyInput").value = cfg.anonKey;
+        document.getElementById("sbTripIdInput").value = cfg.tripId;
+      }
+      document.getElementById("supabaseSyncModal").classList.remove("hidden");
+    }
+    function closeCloudSyncModal() {
+      document.getElementById("supabaseSyncModal").classList.add("hidden");
+    }
+    async function saveCloudSyncConfig() {
+      const url = document.getElementById("sbUrlInput").value.trim().replace(/\/+$/, "");
+      const anonKey = document.getElementById("sbKeyInput").value.trim();
+      const tripId = document.getElementById("sbTripIdInput").value.trim() || DEFAULT_SUPABASE_CONFIG.tripId;
+      if (!url.startsWith("https://") || !anonKey || tripId.length < 6) {
+        alert("Enter a valid https:// Supabase Project URL, anon/publishable key, and Room ID (6+ chars).");
+        return;
+      }
+      try {
+        localStorage.setItem("mv_supabase_config_v1", JSON.stringify({ url, anonKey, tripId }));
+      } catch(e) {}
+      closeCloudSyncModal();
+      await initSupabaseSync();
+    }
+    function disconnectCloudSync() {
+      if (sbClient && sbChannel) { try { sbClient.removeChannel(sbChannel); } catch(e) {} }
+      sbClient = null;
+      sbChannel = null;
+      syncOutbox = [];
+      saveOutbox();
+      try { localStorage.removeItem("mv_supabase_config_v1"); } catch(e) {}
+      document.getElementById("sbUrlInput").value = "";
+      document.getElementById("sbKeyInput").value = "";
+      setCloudStatus("unconfigured", "Disconnected from Supabase — local browser storage only.");
+    }
+    function copyCloudShareLink() {
+      const cfg = getSupabaseConfig();
+      const url = document.getElementById("sbUrlInput").value.trim() || cfg?.url || "";
+      const anonKey = document.getElementById("sbKeyInput").value.trim() || cfg?.anonKey || "";
+      const tripId = document.getElementById("sbTripIdInput").value.trim() || cfg?.tripId || DEFAULT_SUPABASE_CONFIG.tripId;
+      if (!url || !anonKey) { alert("Enter your Supabase URL & Anon Key first."); return; }
+      const base = window.location.origin === "null" ? "https://myviapps.github.io/time/" : (window.location.origin + window.location.pathname);
+      const pairUrl = `${base}?sb_url=${encodeURIComponent(url)}&sb_key=${encodeURIComponent(anonKey)}&trip=${encodeURIComponent(tripId)}#treasury-vault`;
+      navigator.clipboard?.writeText(pairUrl).then(() => alert("Pair link copied! Open it on Mythili's phone to connect automatically."))
+        .catch(() => prompt("Copy this pairing link:", pairUrl));
+    }
+    function copySupabaseSchemaSql(btn) {
+      navigator.clipboard?.writeText(SUPABASE_SCHEMA_SQL).then(() => {
+        if (btn) { const orig = btn.innerText; btn.innerText = "✓ Copied!"; setTimeout(() => btn.innerText = orig, 1800); }
+      }).catch(() => {});
+    }
+
     function togglePaidStatus(id) {
       const item = expenses.find(x => x.id === id);
-      if (item) { item.paid = !item.paid; renderExpenses(); }
+      if (item) {
+        item.paid = !item.paid;
+        renderExpenses();
+        runOrQueueCloudOp({ type: "upsertExpense", item: { ...item } });
+      }
     }
     function openAddExpenseModal() {
       editingExpenseId = null;
@@ -4160,6 +4600,7 @@
       lastDeletedExpense = { item: { ...expenses[idx] }, index: idx };
       expenses.splice(idx, 1);
       renderExpenses();
+      runOrQueueCloudOp({ type: "deleteExpense", id });
       const banner = document.getElementById("expenseUndoBanner");
       const text = document.getElementById("expenseUndoText");
       if (banner && text) {
@@ -4178,6 +4619,7 @@
       const banner = document.getElementById("expenseUndoBanner");
       if (banner) banner.style.display = "none";
       renderExpenses();
+      runOrQueueCloudOp({ type: "upsertExpense", item: { ...item } });
     }
     function closeAddExpenseModal() {
       editingExpenseId = null;
@@ -4191,6 +4633,7 @@
       const notes = document.getElementById("newExpenseNotes").value.trim();
       if (!name || isNaN(amount) || amount <= 0) { alert("Please enter a valid item name and amount."); return; }
 
+      let savedItem;
       if (editingExpenseId !== null) {
         const target = expenses.find(x => x.id === editingExpenseId);
         if (target) {
@@ -4199,21 +4642,36 @@
           target.amount = amount;
           target.paid = paid;
           target.notes = notes || "Updated entry";
+          savedItem = { ...target };
         }
       } else {
-        expenses.push({ id: Date.now(), name, category, amount, paid, notes: notes || "Added during trip" });
+        savedItem = { id: Date.now(), name, category, amount, paid, notes: notes || "Added during trip" };
+        expenses.push(savedItem);
       }
 
       closeAddExpenseModal();
       renderExpenses();
+      if (savedItem) runOrQueueCloudOp({ type: "upsertExpense", item: savedItem });
+    }
+    function clearAllExpenses() {
+      if (!expenses.length) return;
+      if (confirm("Remove ALL expenses permanently across your ledger and synced devices?")) {
+        expenses = [];
+        lastDeletedExpense = null;
+        const banner = document.getElementById("expenseUndoBanner");
+        if (banner) banner.style.display = "none";
+        renderExpenses();
+        runOrQueueCloudOp({ type: "replaceExpenses", items: [] });
+      }
     }
     function resetLedgerToDefault() {
-      if (confirm("Reset bills back to the planned ₹99,231.39 trip budget?")) {
+      if (confirm("Restore all 18 planned ₹99,231.39 trip budget items?")) {
         expenses = DEFAULT_EXPENSES.map(x => ({ ...x }));
         lastDeletedExpense = null;
         const banner = document.getElementById("expenseUndoBanner");
         if (banner) banner.style.display = "none";
         renderExpenses();
+        runOrQueueCloudOp({ type: "replaceExpenses", items: expenses.map(x => ({ ...x })) });
       }
     }
 
@@ -4237,7 +4695,11 @@
 
       try { localStorage.setItem("mv_uttarakhand_pack_v2", JSON.stringify(packedStatus)); } catch(e) {}
     }
-    function togglePack(id) { packedStatus[id] = !packedStatus[id]; renderPacking(); }
+    function togglePack(id) {
+      packedStatus[id] = !packedStatus[id];
+      renderPacking();
+      runOrQueueCloudOp({ type: "syncPacking", packed: { ...packedStatus } });
+    }
 
     // 11. UNIFIED SCROLL-DRIVEN 3D CHOREOGRAPHY ENGINE ACROSS ALL ACTS
     let scroll3DRaf = null;
@@ -4605,6 +5067,10 @@
       selectStay(0);
       renderExpenses();
       renderPacking();
+      initSupabaseSync();
+      window.addEventListener("online", () => {
+        flushSyncOutbox().then((ok) => { if (ok) pullSupabaseSnapshot(); });
+      });
       initScrollAndInteractions();
       initFireflyCanvas();
     });

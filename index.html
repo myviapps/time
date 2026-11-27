@@ -2322,7 +2322,7 @@
         </div>
         <div>
           <label class="f-mono" style="display:block;margin-bottom:0.28rem;font-size:0.68rem;color:var(--ink-muted);">Supabase Anon / Publishable Key</label>
-          <input type="text" id="sbKeyInput" placeholder="eyJhbGciOi... or sb_publishable_..." style="width:100%;background:#110c15;border:1px solid var(--border-hairline);border-radius:0.75rem;padding:0.6rem 0.85rem;color:#fff;outline:none;font-family:var(--f-mono);font-size:0.75rem;" />
+          <input type="text" id="sbKeyInput" value="sb_publishable_AmzKjHbIZY_lNj-KYASViw_nl1TTdAF" placeholder="eyJhbGciOi... or sb_publishable_..." style="width:100%;background:#110c15;border:1px solid var(--border-hairline);border-radius:0.75rem;padding:0.6rem 0.85rem;color:#fff;outline:none;font-family:var(--f-mono);font-size:0.75rem;" />
         </div>
         <div>
           <label class="f-mono" style="display:block;margin-bottom:0.28rem;font-size:0.68rem;color:var(--ink-muted);">Shared Trip Room ID (min 6 chars)</label>
@@ -2542,7 +2542,7 @@
 
     function layoutHeroWords() {
       const vw = window.innerWidth;
-      const visibleMobileW = Math.min(1440, vw / Math.max(0.1, currentU)) * 0.92;
+      const visibleMobileW = Math.min(1440, vw / Math.max(0.1, currentU)) * 0.88;
 
       HERO_SLIDES.forEach((slide, idx) => {
         const entry = heroSlideEls[idx];
@@ -3452,7 +3452,7 @@
     // or connect dynamically from the in-app Cloud Sync modal)
     const DEFAULT_SUPABASE_CONFIG = {
       url: "https://gitfidxwwvlfusexawjy.supabase.co",
-      anonKey: "",
+      anonKey: "sb_publishable_AmzKjHbIZY_lNj-KYASViw_nl1TTdAF",
       tripId: "mythili-vijay-uttarakhand-2026"
     };
     const SUPABASE_SCHEMA_SQL = `-- Run once in Supabase Dashboard -> SQL Editor -> New Query
@@ -4252,13 +4252,11 @@ end $$;`;
     }
 
     function getSupabaseConfig() {
-      if (DEFAULT_SUPABASE_CONFIG.url && DEFAULT_SUPABASE_CONFIG.anonKey) {
-        return { ...DEFAULT_SUPABASE_CONFIG };
-      }
       try {
         const saved = localStorage.getItem("mv_supabase_config_v1");
         if (saved) {
           const cfg = JSON.parse(saved);
+          if (cfg && cfg.disabled) return null;
           if (cfg && cfg.url && cfg.anonKey) {
             return {
               url: String(cfg.url).trim().replace(/\/+$/, ""),
@@ -4268,6 +4266,9 @@ end $$;`;
           }
         }
       } catch(e) {}
+      if (DEFAULT_SUPABASE_CONFIG.url && DEFAULT_SUPABASE_CONFIG.anonKey) {
+        return { ...DEFAULT_SUPABASE_CONFIG };
+      }
       return null;
     }
 
@@ -4539,7 +4540,7 @@ end $$;`;
       sbChannel = null;
       syncOutbox = [];
       saveOutbox();
-      try { localStorage.removeItem("mv_supabase_config_v1"); } catch(e) {}
+      try { localStorage.setItem("mv_supabase_config_v1", JSON.stringify({ disabled: true })); } catch(e) {}
       document.getElementById("sbUrlInput").value = "";
       document.getElementById("sbKeyInput").value = "";
       setCloudStatus("unconfigured", "Disconnected from Supabase — local browser storage only.");
